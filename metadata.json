@@ -1,0 +1,6 @@
+{
+  "name": "ScreenShare",
+  "description": "Peer-to-peer screen sharing app using WebRTC and Firebase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
