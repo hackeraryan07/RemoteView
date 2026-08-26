@@ -26,7 +26,7 @@ class WebRTCClient(
     init {
         // Initialize WebRTC
         PeerConnectionFactory.initialize(
-            PeerConnectionFactory.InitializationOptions.builder(context)
+            PeerConnectionFactory.InitializationOptions.builder(context.applicationContext)
                 .setEnableInternalTracer(true)
                 .createInitializationOptions()
         )
@@ -88,7 +88,7 @@ class WebRTCClient(
         
         surfaceTextureHelper = SurfaceTextureHelper.create("ScreenCaptureThread", eglBase.eglBaseContext)
         localVideoSource = peerConnectionFactory.createVideoSource(videoCapturer!!.isScreencast)
-        videoCapturer?.initialize(surfaceTextureHelper, context, localVideoSource!!.capturerObserver)
+        videoCapturer?.initialize(surfaceTextureHelper, context.applicationContext, localVideoSource!!.capturerObserver)
         
         // Start capture. Width, height, fps
         val displayMetrics = context.resources.displayMetrics

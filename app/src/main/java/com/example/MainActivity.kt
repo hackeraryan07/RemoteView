@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -182,7 +184,11 @@ class MainActivity : ComponentActivity() {
     private fun startScreenCapture(mediaProjectionIntent: Intent) {
         val serviceIntent = Intent(this, ScreenCaptureService::class.java)
         ScreenCaptureService.onServiceStarted = {
-            setupSignalingAndWebRTC(mediaProjectionIntent)
+            // Delay to ensure the OS has fully registered the foreground service
+            // before we attempt to start MediaProjection, avoiding a SecurityException race condition.
+            Handler(Looper.getMainLooper()).postDelayed({
+                setupSignalingAndWebRTC(mediaProjectionIntent)
+            }, 500)
         }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)

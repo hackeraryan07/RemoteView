@@ -32,7 +32,7 @@ class ScreenCaptureService : Service() {
         val notification: Notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Screen Sharing")
             .setContentText("Your screen is being shared.")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(android.R.drawable.ic_menu_camera)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
