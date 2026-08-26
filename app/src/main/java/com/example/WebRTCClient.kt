@@ -58,19 +58,19 @@ class WebRTCClient(
 
             override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
 
-            override fun onAddStream(stream: MediaStream?) {
-                Log.d("WebRTCClient", "Stream added: ${stream?.videoTracks?.size}")
-                if (!isHost && stream?.videoTracks?.isNotEmpty() == true) {
-                    val track = stream.videoTracks[0]
-                    viewerRenderer?.let {
-                        track.addSink(it)
-                    }
-                }
-            }
+            override fun onAddStream(stream: MediaStream?) {}
             override fun onRemoveStream(stream: MediaStream?) {}
             override fun onDataChannel(dataChannel: DataChannel?) {}
             override fun onRenegotiationNeeded() {}
-            override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {}
+            override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
+                Log.d("WebRTCClient", "Track added")
+                if (!isHost) {
+                    val track = receiver?.track() as? VideoTrack
+                    viewerRenderer?.let {
+                        track?.addSink(it)
+                    }
+                }
+            }
         })
 
         if (isHost && mediaProjectionIntent != null) {
@@ -102,9 +102,7 @@ class WebRTCClient(
         videoCapturer?.startCapture(width, height, 30)
 
         localVideoTrack = peerConnectionFactory.createVideoTrack("100", localVideoSource)
-        val stream = peerConnectionFactory.createLocalMediaStream("102")
-        stream.addTrack(localVideoTrack)
-        peerConnection?.addStream(stream)
+        peerConnection?.addTrack(localVideoTrack, listOf("102"))
     }
 
     private fun createOffer(pc: PeerConnection) {
