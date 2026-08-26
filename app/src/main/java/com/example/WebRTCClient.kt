@@ -92,7 +92,14 @@ class WebRTCClient(
         
         // Start capture. Width, height, fps
         val displayMetrics = context.resources.displayMetrics
-        videoCapturer?.startCapture(displayMetrics.widthPixels, displayMetrics.heightPixels, 30)
+        var width = displayMetrics.widthPixels
+        var height = displayMetrics.heightPixels
+        
+        // WebRTC hardware video encoders often crash if dimensions are not even numbers
+        if (width % 2 != 0) width -= 1
+        if (height % 2 != 0) height -= 1
+        
+        videoCapturer?.startCapture(width, height, 30)
 
         localVideoTrack = peerConnectionFactory.createVideoTrack("100", localVideoSource)
         val stream = peerConnectionFactory.createLocalMediaStream("102")

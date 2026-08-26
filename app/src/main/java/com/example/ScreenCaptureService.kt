@@ -13,6 +13,10 @@ import androidx.core.app.NotificationCompat
 
 class ScreenCaptureService : Service() {
 
+    companion object {
+        var onServiceStarted: (() -> Unit)? = null
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val channelId = "screen_capture_channel"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -36,6 +40,9 @@ class ScreenCaptureService : Service() {
         } else {
             startForeground(1, notification)
         }
+
+        onServiceStarted?.invoke()
+        onServiceStarted = null
 
         return START_NOT_STICKY
     }

@@ -181,13 +181,14 @@ class MainActivity : ComponentActivity() {
 
     private fun startScreenCapture(mediaProjectionIntent: Intent) {
         val serviceIntent = Intent(this, ScreenCaptureService::class.java)
+        ScreenCaptureService.onServiceStarted = {
+            setupSignalingAndWebRTC(mediaProjectionIntent)
+        }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
         } else {
             startService(serviceIntent)
         }
-
-        setupSignalingAndWebRTC(mediaProjectionIntent)
     }
 
     private fun startViewing() {
