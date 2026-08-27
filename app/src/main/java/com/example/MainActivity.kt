@@ -227,6 +227,7 @@ class MainActivity : ComponentActivity() {
                         webRTCClient?.getEglBaseContext()?.let { eglContext ->
                             init(eglContext, null)
                         }
+                        webRTCClient?.setRemoteRenderer(this)
                     }
                 },
                 modifier = Modifier.fillMaxSize()

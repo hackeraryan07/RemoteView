@@ -13,7 +13,7 @@ class WebRTCClient(
     private val signalingClient: SignalingClient,
     private val isHost: Boolean,
     private val mediaProjectionIntent: Intent?,
-    private val viewerRenderer: SurfaceViewRenderer?
+    private var viewerRenderer: SurfaceViewRenderer?
 ) {
     private val eglBase = EglBase.create()
     private val peerConnectionFactory: PeerConnectionFactory
@@ -21,6 +21,7 @@ class WebRTCClient(
     private var videoCapturer: VideoCapturer? = null
     private var localVideoSource: VideoSource? = null
     private var localVideoTrack: VideoTrack? = null
+    private var remoteVideoTrack: VideoTrack? = null
     private var surfaceTextureHelper: SurfaceTextureHelper? = null
 
     init {
@@ -65,9 +66,9 @@ class WebRTCClient(
             override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
                 Log.d("WebRTCClient", "Track added")
                 if (!isHost) {
-                    val track = receiver?.track() as? VideoTrack
+                    remoteVideoTrack = receiver?.track() as? VideoTrack
                     viewerRenderer?.let {
-                        track?.addSink(it)
+                        remoteVideoTrack?.addSink(it)
                     }
                 }
             }
@@ -77,6 +78,11 @@ class WebRTCClient(
             setupScreenCapturer(mediaProjectionIntent)
             peerConnection?.let { createOffer(it) }
         }
+    }
+
+    fun setRemoteRenderer(renderer: SurfaceViewRenderer) {
+        this.viewerRenderer = renderer
+        remoteVideoTrack?.addSink(renderer)
     }
 
     private fun setupScreenCapturer(intent: Intent) {
