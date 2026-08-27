@@ -54,13 +54,44 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private var lastCrashMessage = mutableStateOf<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val sharedPrefs = getSharedPreferences("CrashLogs", Context.MODE_PRIVATE)
+        val lastCrash = sharedPrefs.getString("last_crash", null)
+        if (lastCrash != null) {
+            lastCrashMessage.value = lastCrash
+            sharedPrefs.edit().remove("last_crash").apply()
+        }
+
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            sharedPrefs.edit().putString("last_crash", throwable.stackTraceToString()).commit()
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
+
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     MainScreen(modifier = Modifier.padding(innerPadding))
+                    
+                    lastCrashMessage.value?.let { crash ->
+                        AlertDialog(
+                            onDismissRequest = { lastCrashMessage.value = null },
+                            title = { Text("App Crashed Last Time") },
+                            text = { 
+                                androidx.compose.foundation.lazy.LazyColumn {
+                                    item { Text(crash, style = MaterialTheme.typography.bodySmall) }
+                                }
+                            },
+                            confirmButton = {
+                                TextButton(onClick = { lastCrashMessage.value = null }) { Text("OK") }
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -198,30 +229,47 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestMediaProjection() {
-        isSharing.value = true
-        val mediaProjectionManager =
-            getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        mediaProjectionLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
+        try {
+            isSharing.value = true
+            val mediaProjectionManager =
+                getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            mediaProjectionLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
+        } catch (e: Exception) {
+            isSharing.value = false
+            android.widget.Toast.makeText(this, "requestMediaProjection Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun startScreenCapture(mediaProjectionIntent: Intent) {
-        val serviceIntent = Intent(this, ScreenCaptureService::class.java)
-        ScreenCaptureService.onServiceStarted = {
-            // Delay to ensure the OS has fully registered the foreground service
-            // before we attempt to start MediaProjection, avoiding a SecurityException race condition.
-            Handler(Looper.getMainLooper()).postDelayed({
-                setupSignalingAndWebRTC(mediaProjectionIntent)
-            }, 500)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent)
-        } else {
-            startService(serviceIntent)
+        try {
+            val serviceIntent = Intent(this, ScreenCaptureService::class.java)
+            ScreenCaptureService.onServiceStarted = {
+                // Delay to ensure the OS has fully registered the foreground service
+                // before we attempt to start MediaProjection, avoiding a SecurityException race condition.
+                Handler(Looper.getMainLooper()).postDelayed({
+                    try {
+                        setupSignalingAndWebRTC(mediaProjectionIntent)
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(this, "setupSignalingAndWebRTC Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                    }
+                }, 500)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(this, "startScreenCapture Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
         }
     }
 
     private fun startViewing() {
-        setupSignalingAndWebRTC(null)
+        try {
+            setupSignalingAndWebRTC(null)
+        } catch (e: Exception) {
+            android.widget.Toast.makeText(this, "startViewing Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun setupSignalingAndWebRTC(mediaProjectionIntent: Intent?) {
