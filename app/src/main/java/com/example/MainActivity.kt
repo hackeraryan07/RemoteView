@@ -9,6 +9,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -26,6 +27,9 @@ import org.webrtc.IceCandidate
 import org.webrtc.SessionDescription
 import org.webrtc.SurfaceViewRenderer
 import kotlin.random.Random
+
+import android.Manifest
+import android.os.Build
 
 class MainActivity : ComponentActivity() {
 
@@ -64,6 +68,22 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainScreen(modifier: Modifier = Modifier) {
+        val permissions = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val permissionLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions()
+        ) { _ -> }
+
+        LaunchedEffect(Unit) {
+            permissionLauncher.launch(permissions.toTypedArray())
+        }
+
         if (isViewing.value) {
             ViewerScreen(modifier)
         } else {
@@ -158,6 +178,9 @@ class MainActivity : ComponentActivity() {
                 factory = { context ->
                     SurfaceViewRenderer(context).apply {
                         viewerRenderer = this
+                        webRTCClient?.getEglBaseContext()?.let { eglContext ->
+                            init(eglContext, null)
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxSize()
