@@ -58,6 +58,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        try {
+            if (com.google.firebase.FirebaseApp.getApps(this).isEmpty()) {
+                val options = com.google.firebase.FirebaseOptions.Builder()
+                    .setProjectId("remoteview-d1adf")
+                    .setApplicationId("1:943698175804:android:4fbc38a7b28c4d3f7f6039")
+                    .setApiKey("AIzaSyBOAaq5tUqcQAwBjdsWUNqGPy2e6-2JTIA")
+                    .setDatabaseUrl("https://remoteview-d1adf-default-rtdb.firebaseio.com")
+                    .setStorageBucket("remoteview-d1adf.firebasestorage.app")
+                    .build()
+                com.google.firebase.FirebaseApp.initializeApp(this, options)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FirebaseInit", "Error initializing Firebase", e)
+        }
 
         val sharedPrefs = getSharedPreferences("CrashLogs", Context.MODE_PRIVATE)
         val lastCrash = sharedPrefs.getString("last_crash", null)
